@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Um Encontro na Festa</title>
+    <style>
+        /*
+         * =========================================
+         * 1. CONFIGURAÇÃO GERAL E VARIÁVEIS CSS (PIXEL ART)
+         * =========================================
+         * Estilos base com uma nova paleta de cores para um visual pixel art fofo.
+         * A variável --pixel-size é usada para manter a consistência do estilo.
+         */
+        :root {
+            --pixel-size: 4px; /* O tamanho de cada "pixel" no nosso jogo */
+            
+            /* Paleta de Cores Fofinha */
+            --bg-dark: #1a1c2c;
+            --wall-color: #303452;
+            --floor-color: #4b415f;
+            --shadow-color: #222034;
+            --accent-color: #ffcd75;
+            --text-light: #f4f4f4;
+            --text-dark: #1a1c2c;
+            --heart-color: #ff75a2;
+
+            --sofa-color: #8f563b;
+            --sofa-dark: #663931;
+            --table-color: #ab7b57;
+            --table-dark: #7d553a;
+            --tv-color: #222034;
+            --tv-screen: #68aed4;
+            --rug-color: #8c4b70;
+            --rug-dark: #65315b;
+            --speaker-color: #424050;
+            --plant-pot: #8f563b;
+            --plant-leaf: #5b8c4b;
+
+            --boy-hair: #663931;
+            --boy-skin: #f2a676;
+            --boy-shirt: #68aed4;
+            --boy-pants: #303452;
+
+            --girl-hair: #d9573b;
+            --girl-skin: #f5cdaa;
+            --girl-shirt: #424050;
+            --girl-pants: #303452;
+            
+            --motion-reduce: 1; /* 1 para normal, 0 para reduzido */
+        }
+        
+        /* Modo de Alto Contraste (Adaptado para Pixel Art) */
+        body.high-contrast {
+            --bg-dark: #000;
+            --wall-color: #111;
+            --floor-color: #222;
+            --shadow-color: #000;
+            --accent-color: #ffff00;
+            --text-light: #fff;
+            --text-dark: #000;
+            --sofa-color: #993300;
+            --boy-shirt: #00ffff;
+            --girl-hair: #ff0000;
+        }
+
+        body.reduce-motion { --motion-reduce: 0; }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+        }
+
+        /*
+         * =========================================
+         * 2. LAYOUT E CENÁRIO DO JOGO
+         * =========================================
+         * Estrutura do contêiner do jogo. A câmera agora tem um tamanho fixo
+         * para manter a integridade da pixel art, mas centraliza na tela.
+         */
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.5s ease;
+            image-rendering: pixelated; /* Essencial para o look pixel art */
+        }
+
+        #game-camera {
+            position: relative;
+            width: calc(var(--pixel-size) * 128); /* 512px */
+            height: calc(var(--pixel-size) * 96);  /* 384px */
+            overflow: hidden;
+            background-color: var(--floor-color);
+            box-shadow: 0 0 0 calc(var(--pixel-size) * 2) var(--shadow-color);
+        }
+
+        #game-world {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /*
+         * =========================================
+         * 3. OBJETOS DO CENÁRIO (PIXEL ART)
+         * =========================================
+         * Todos os objetos são "desenhados" usando box-shadow.
+         * Cada sombra é um "pixel" do nosso objeto.
+         */
+        .game-object {
+            position: absolute;
+        }
+        
+        /* Função CSS-like para gerar box-shadows de pixels */
+        .pixel-art {
+            position: absolute;
+            width: var(--pixel-size);
+            height: var(--pixel-size);
+            background: transparent;
+        }
+
+        /* Paredes */
+        #walls {
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(to top, var(--wall-color) 0%, transparent 40%);
+        }
+
+        /* Tapete */
+        #rug {
+            left: 25%; top: 40%;
+            width: 50%; height: 50%;
+            background-color: var(--rug-color);
+            border: calc(var(--pixel-size) * 2) solid var(--rug-dark);
+        }
+
+        /* --- LAYOUT DE MÓVEIS (LABIRINTO) ATUALIZADO --- */
+        #sofa {
+            left: 30%; top: 30%;
+            width: calc(var(--pixel-size) * 30);
+            height: calc(var(--pixel-size) * 6);
+            background: var(--sofa-dark);
+            box-shadow: 
+                0 calc(var(--pixel-size) * -2) 0 0 var(--sofa-color),
+                0 calc(var(--pixel-size) * -1) 0 0 var(--sofa-color);
+        }
+        #table {
+            left: 70%; top: 80%;
+            width: calc(var(--pixel-size) * 20);
+            height: calc(var(--pixel-size) * 8);
+            background: var(--table-color);
+            border-bottom: calc(var(--pixel-size) * 2) solid var(--table-dark);
+        }
+        .chair {
+            width: calc(var(--pixel-size) * 4);
+            height: calc(var(--pixel-size) * 3);
+            background-color: var(--table-dark);
+        }
+        #chair1 { left: 75%; top: 75%; }
+        #chair2 { left: 85%; top: 75%; }
+
+        #tv {
+            left: 80%; top: 10%;
+            width: calc(var(--pixel-size) * 12);
+            height: calc(var(--pixel-size) * 10);
+            background: var(--tv-color);
+        }
+        #tv-screen {
+            position: absolute;
+            left: var(--pixel-size); top: var(--pixel-size);
+            width: calc(var(--pixel-size) * 10);
+            height: calc(var(--pixel-size) * 6);
+            background: var(--tv-screen);
+            animation: tv-flicker 0.5s linear infinite calc(var(--motion-reduce) * 1);
+        }
+        @keyframes tv-flicker {
+            0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; }
+        }
+
+        #speaker {
+            left: 5%; top: 80%;
+            width: calc(var(--pixel-size) * 5);
+            height: calc(var(--pixel-size) * 7);
+            background: var(--speaker-color);
+            animation: speaker-pulse 1.2s ease-in-out infinite calc(var(--motion-reduce) * 1);
+        }
+        @keyframes speaker-pulse {
+            0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.05, 1.05); }
+        }
+        
+        #bookshelf {
+            left: 25%; top: 20%;
+            width: calc(var(--pixel-size) * 4);
+            height: calc(var(--pixel-size) * 20);
+            background: var(--sofa-dark);
+        }
+        #counter {
+            left: 30%; top: 70%;
+            width: calc(var(--pixel-size) * 35);
+            height: calc(var(--pixel-size) * 5);
+            background: var(--table-color);
+            border-bottom: calc(var(--pixel-size) * 2) solid var(--table-dark);
+        }
+        #plant {
+            left: 10%; top: 50%;
+            width: calc(var(--pixel-size) * 5);
+            height: calc(var(--pixel-size) * 8);
+        }
+        #plant::before, #plant2::before, #plant3::before { /* Vaso */
+            content: ''; position: absolute;
+            bottom: 0; left: 0;
+            width: 100%; height: calc(var(--pixel-size) * 4);
+            background: var(--plant-pot);
+        }
+        #plant::after, #plant2::after, #plant3::after { /* Folhas */
+            content: ''; position: absolute;
+            top: 0; left: var(--pixel-size);
+            width: var(--pixel-size); height: var(--pixel-size);
+            background: var(--plant-leaf);
+            box-shadow: 
+                calc(var(--pixel-size) * 1) 0 0 0 var(--plant-leaf),
+                calc(var(--pixel-size) * 2) 0 0 0 var(--plant-leaf),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 1) 0 0 var(--plant-leaf);
+        }
+        #plant2 {
+            left: 80%; top: 55%;
+            width: calc(var(--pixel-size) * 5);
+            height: calc(var(--pixel-size) * 8);
+        }
+        #plant3 {
+            left: 60%; top: 5%;
+            width: calc(var(--pixel-size) * 5);
+            height: calc(var(--pixel-size) * 8);
+        }
+        #end_table {
+            left: 0%; top: 0%;
+            width: calc(var(--pixel-size) * 10);
+            height: calc(var(--pixel-size) * 8);
+            background: var(--table-color);
+            border-bottom: calc(var(--pixel-size) * 2) solid var(--table-dark);
+        }
+        #bookshelf2 {
+            left: 0%; top: 25%;
+            width: calc(var(--pixel-size) * 20);
+            height: calc(var(--pixel-size) * 4);
+            background: var(--sofa-dark);
+        }
+        /* --- FIM DO NOVO LAYOUT --- */
+
+        /*
+         * =========================================
+         * 4. PERSONAGENS (PIXEL ART)
+         * =========================================
+         */
+        .character {
+            position: absolute;
+            width: calc(var(--pixel-size) * 6);
+            height: calc(var(--pixel-size) * 10);
+            z-index: 50;
+        }
+        .character-sprite {
+            position: absolute;
+            width: var(--pixel-size);
+            height: var(--pixel-size);
+            top: 0; left: 0;
+            background: var(--boy-hair);
+            transition: opacity 0.2s;
+        }
+
+        .boy-idle {
+            box-shadow: /* Cabelo */
+                calc(var(--pixel-size) * 1) 0 0 0 var(--boy-hair), calc(var(--pixel-size) * 2) 0 0 0 var(--boy-hair),
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 1) 0 0 var(--boy-hair), calc(var(--pixel-size) * 3) calc(var(--pixel-size) * 1) 0 0 var(--boy-hair),
+                /* Rosto */
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 1) 0 0 var(--boy-skin), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 1) 0 0 var(--boy-skin),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 2) 0 0 var(--boy-skin), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 2) 0 0 var(--boy-skin),
+                /* Camisa */
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 3) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 3) 0 0 var(--boy-shirt),
+                calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 3) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 3) calc(var(--pixel-size) * 3) 0 0 var(--boy-shirt),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 4) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 4) 0 0 var(--boy-shirt),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 5) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 5) 0 0 var(--boy-shirt),
+                /* Calças */
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 6) 0 0 var(--boy-pants), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 6) 0 0 var(--boy-pants),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 7) 0 0 var(--boy-pants), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 7) 0 0 var(--boy-pants);
+        }
+        .boy-walk1 {
+             box-shadow: /* Cabelo */
+                calc(var(--pixel-size) * 1) 0 0 0 var(--boy-hair), calc(var(--pixel-size) * 2) 0 0 0 var(--boy-hair),
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 1) 0 0 var(--boy-hair), calc(var(--pixel-size) * 3) calc(var(--pixel-size) * 1) 0 0 var(--boy-hair),
+                /* Rosto */
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 1) 0 0 var(--boy-skin), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 1) 0 0 var(--boy-skin),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 2) 0 0 var(--boy-skin), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 2) 0 0 var(--boy-skin),
+                /* Camisa */
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 3) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 3) 0 0 var(--boy-shirt),
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 4) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 4) 0 0 var(--boy-shirt),
+                calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 4) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 3) calc(var(--pixel-size) * 4) 0 0 var(--boy-shirt),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 5) 0 0 var(--boy-shirt), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 5) 0 0 var(--boy-shirt),
+                /* Calças */
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 6) 0 0 var(--boy-pants), calc(var(--pixel-size) * 3) calc(var(--pixel-size) * 6) 0 0 var(--boy-pants),
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 7) 0 0 var(--boy-pants), calc(var(--pixel-size) * 3) calc(var(--pixel-size) * 7) 0 0 var(--boy-pants);
+        }
+
+        #npc .character-sprite { background: var(--girl-hair); }
+        .girl-idle {
+            box-shadow: /* Cabelo */
+                calc(var(--pixel-size) * 1) 0 0 0 var(--girl-hair), calc(var(--pixel-size) * 2) 0 0 0 var(--girl-hair), calc(var(--pixel-size) * 3) 0 0 0 var(--girl-hair),
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 1) 0 0 var(--girl-hair), calc(var(--pixel-size) * 4) calc(var(--pixel-size) * 1) 0 0 var(--girl-hair),
+                /* Rosto */
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 1) 0 0 var(--girl-skin), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 1) 0 0 var(--girl-skin),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 2) 0 0 var(--girl-skin), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 2) 0 0 var(--girl-skin),
+                /* Camisa */
+                calc(var(--pixel-size) * 0) calc(var(--pixel-size) * 3) 0 0 var(--girl-shirt), calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 3) 0 0 var(--girl-shirt),
+                calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 3) 0 0 var(--girl-shirt), calc(var(--pixel-size) * 3) calc(var(--pixel-size) * 3) 0 0 var(--girl-shirt),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 4) 0 0 var(--girl-shirt), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 4) 0 0 var(--girl-shirt),
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 4) 0 1px #fff, /* Estrela */
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 5) 0 0 var(--girl-shirt), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 5) 0 0 var(--girl-shirt),
+                /* Calças */
+                calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 6) 0 0 var(--girl-pants), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 6) 0 0 var(--girl-pants);
+        }
+        
+        #levelup-heart {
+            position: absolute; bottom: 100%; left: 50%; opacity: 0;
+            background: var(--heart-color);
+            box-shadow: 
+                calc(var(--pixel-size) * 1) 0 0 0 var(--heart-color), calc(var(--pixel-size) * -1) 0 0 0 var(--heart-color),
+                0 calc(var(--pixel-size) * -1) 0 0 var(--heart-color), calc(var(--pixel-size) * 2) calc(var(--pixel-size) * -1) 0 0 var(--heart-color),
+                calc(var(--pixel-size) * -2) calc(var(--pixel-size) * -1) 0 0 var(--heart-color);
+            width: var(--pixel-size); height: var(--pixel-size); transform: translateX(-50%);
+        }
+        #levelup-heart.animate { animation: level-up-float 1.2s ease-out forwards calc(var(--motion-reduce) * 1); }
+        @keyframes level-up-float {
+            0% { transform: translate(-50%, 10px) scale(0); opacity: 0; }
+            20% { transform: translate(-50%, 0) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%, -30px) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -40px) scale(0.8); opacity: 0; }
+        }
+
+        .interaction-prompt {
+            position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+            background-color: var(--bg-dark); color: var(--accent-color);
+            padding: calc(var(--pixel-size) * 1) calc(var(--pixel-size) * 2);
+            font-size: calc(var(--pixel-size) * 3); white-space: nowrap;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s; pointer-events: none;
+            border: var(--pixel-size) solid var(--accent-color);
+        }
+        .interaction-prompt.visible { opacity: 1; visibility: visible; }
+
+        /*
+         * =========================================
+         * 5. INTERFACE DO USUÁRIO (HUD)
+         * =========================================
+         */
+        #hud {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 200;
+        }
+
+        .hud-panel {
+            background: var(--bg-dark); border: var(--pixel-size) solid var(--accent-color);
+            padding: calc(var(--pixel-size) * 2); position: absolute;
+        }
+        #quest-log { top: calc(var(--pixel-size) * 3); left: calc(var(--pixel-size) * 3); }
+        #quest-log h2 { margin: 0 0 calc(var(--pixel-size) * 1) 0; font-size: calc(var(--pixel-size) * 3.5); color: var(--accent-color); }
+        #quest-log p { margin: 0; font-size: calc(var(--pixel-size) * 3); }
+
+        #restart-button {
+            position: absolute; top: calc(var(--pixel-size) * 3); right: calc(var(--pixel-size) * 3);
+            background: transparent; border: var(--pixel-size) solid var(--accent-color);
+            color: var(--accent-color); padding: calc(var(--pixel-size) * 2);
+            font-family: inherit; font-size: calc(var(--pixel-size) * 3);
+            cursor: pointer; pointer-events: all; z-index: 250;
+        }
+        #restart-button:hover, #restart-button:focus { background: var(--accent-color); color: var(--text-dark); }
+        
+        #volume-panel {
+            top: calc(var(--pixel-size) * 15); right: calc(var(--pixel-size) * 3);
+            display: flex; align-items: center; gap: calc(var(--pixel-size) * 2);
+            pointer-events: all;
+        }
+        #volume-panel label { font-size: calc(var(--pixel-size) * 3); }
+        input[type=range] { -webkit-appearance: none; appearance: none; width: calc(var(--pixel-size) * 20); background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: var(--pixel-size); background: var(--wall-color); border: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            height: calc(var(--pixel-size) * 4); width: calc(var(--pixel-size) * 2);
+            background: var(--accent-color); margin-top: calc(var(--pixel-size) * -1.5);
+        }
+        input[type=range]::-moz-range-track { width: 100%; height: var(--pixel-size); background: var(--wall-color); border: none; }
+        input[type=range]::-moz-range-thumb {
+            height: calc(var(--pixel-size) * 4); width: calc(var(--pixel-size) * 2);
+            background: var(--accent-color); border: none; border-radius: 0;
+        }
+
+        #dialogue-box {
+            position: absolute; bottom: 5%; left: 5%; right: 5%;
+            padding: calc(var(--pixel-size) * 4); z-index: 300;
+            opacity: 0; visibility: hidden; transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+            pointer-events: all;
+        }
+        #dialogue-box.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dialogue-header { display: flex; align-items: center; margin-bottom: calc(var(--pixel-size) * 3); }
+        .dialogue-portrait {
+            width: calc(var(--pixel-size) * 10); height: calc(var(--pixel-size) * 10);
+            border: var(--pixel-size) solid var(--accent-color); margin-right: calc(var(--pixel-size) * 3);
+            flex-shrink: 0;
+        }
+        .dialogue-portrait.boy { background-color: var(--boy-hair); }
+        .dialogue-portrait.girl { background-color: var(--girl-hair); }
+        .dialogue-speaker { font-weight: bold; color: var(--accent-color); }
+        .dialogue-text { margin-bottom: calc(var(--pixel-size) * 4); min-height: 3em; }
+        .dialogue-text i { color: #aaa; }
+        #dialogue-choices { display: flex; flex-direction: column; gap: calc(var(--pixel-size) * 2); }
+        .choice-button {
+            background: transparent; border: var(--pixel-size) solid var(--accent-color);
+            color: var(--accent-color); padding: calc(var(--pixel-size) * 2);
+            text-align: left; cursor: pointer; font-family: inherit;
+        }
+        .choice-button:hover, .choice-button:focus { background: var(--accent-color); color: var(--text-dark); }
+        
+        #mobile-controls {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+            z-index: 250; pointer-events: none; display: none;
+        }
+        @media (max-width: 768px), (pointer: coarse) { #mobile-controls { display: block; } }
+        #joystick-area { position: absolute; bottom: 5%; left: 5%; width: 120px; height: 120px; pointer-events: all; }
+        #joystick-base { position: absolute; width: 100%; height: 100%; background: rgba(255,255,255,0.2); border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.5); }
+        #joystick-thumb { position: absolute; width: 60px; height: 60px; left: 30px; top: 30px; background: rgba(255,255,255,0.4); border-radius: 50%; }
+        #action-button { 
+            position: absolute; bottom: 7%; right: 5%; 
+            width: 80px; height: 80px; 
+            background: rgba(255, 205, 117, 0.5); 
+            border: 3px solid var(--accent-color); 
+            border-radius: 50%; pointer-events: all;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: bold; color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="game-camera">
+            <div id="game-world">
+                <!-- Cenário -->
+                <div id="walls" class="game-object"></div>
+                <div id="rug" class="game-object"></div>
+                
+                <!-- Móveis (Layout de Labirinto) -->
+                <div id="tv" class="game-object">
+                    <div id="tv-screen"></div>
+                </div>
+                <div id="table" class="game-object"></div>
+                <div id="chair1" class="chair game-object"></div>
+                <div id="chair2" class="chair game-object"></div>
+                <div id="sofa" class="game-object"></div>
+                <div id="speaker" class="game-object"></div>
+                <div id="bookshelf" class="game-object"></div>
+                <div id="counter" class="game-object"></div>
+                <div id="plant" class="game-object"></div>
+                <div id="plant2" class="game-object"></div>
+                <div id="plant3" class="game-object"></div>
+                <div id="end_table" class="game-object"></div>
+                <div id="bookshelf2" class="game-object"></div>
+
+                <!-- Personagens -->
+                <div id="npc" class="character">
+                    <div class="character-sprite girl-idle"></div>
+                    <div class="interaction-prompt">Interagir (E)</div>
+                </div>
+                <div id="player" class="character">
+                    <div class="character-sprite boy-idle"></div>
+                    <div id="levelup-heart" class="pixel-art"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div id="quest-log" class="hud-panel">
+                <h2 id="quest-title">Objetivo</h2>
+                <p id="quest-description">Fale com a garota.</p>
+            </div>
+
+            <button id="restart-button">Reiniciar</button>
+
+            <div id="volume-panel" class="hud-panel">
+                <label for="volume-slider">♪</label>
+                <input type="range" id="volume-slider" min="0" max="100" value="100">
+            </div>
+
+            <div id="dialogue-box" class="hud-panel">
+                <div class="dialogue-header">
+                    <div id="dialogue-portrait" class="dialogue-portrait"></div>
+                    <span id="dialogue-speaker" class="dialogue-speaker"></span>
+                </div>
+                <p id="dialogue-text" class="dialogue-text"></p>
+                <div id="dialogue-choices"></div>
+            </div>
+        </div>
+
+        <!-- Controles Mobile -->
+        <div id="mobile-controls">
+            <div id="joystick-area">
+                <div id="joystick-base"></div>
+                <div id="joystick-thumb"></div>
+            </div>
+            <button id="action-button">E</button>
+        </div>
+    </div>
+    
+    <script>
+    (function() {
+        'use strict';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const game = new Game();
+            game.init();
+        });
+
+        const DIALOGUE = {
+            start: { speaker: "Menina ruiva", portrait: "girl", text: "Oi... A música está um pouco alta, não acha?", onEnter: "setQuest_LowerMusic", next: null },
+            talkAgainStart: {
+                speaker: "Menina ruiva", portrait: "girl", text: "Ah, bem melhor agora, obrigada! O que foi?",
+                choices: [{ label: "Falar sobre a camiseta dela (Blink-182)", next: "talkBlink182" }]
+            },
+            talkBlink182: { speaker: "Menina ruiva", portrait: "girl", text: "Nossa, você conhece? É minha banda favorita!", onEnter: "completeFinalQuest", next: "end" },
+            end: { speaker: "Narrador", portrait: "none", text: "<i>[A música da festa parece um pouco mais distante agora.]</i>", next: null },
+            alreadyMet: { speaker: "Menina ruiva", portrait: "girl", text: "Hmm... la-la... <i>[murmúrio de reconhecimento amigável]</i>", next: null }
+        };
+
+        class Game {
+            constructor() {
+                this.elements = {
+                    player: document.getElementById('player'),
+                    npc: document.getElementById('npc'),
+                    speaker: document.getElementById('speaker'),
+                    camera: document.getElementById('game-camera'),
+                    volumeSlider: document.getElementById('volume-slider'),
+                };
+                this.gameState = 'sitting';
+                this.questState = 'START';
+                this.lastTime = 0;
+                
+                this.inputHandler = new InputHandler();
+                this.audioManager = new AudioManager();
+                this.uiManager = new UIManager(this);
+                this.dialogueSystem = new DialogueSystem(this, DIALOGUE);
+                
+                this.setupEntities();
+                this.collisionObjects = [];
+            }
+
+            init() {
+                this.uiManager.init();
+                this.inputHandler.init(this);
+                this.setupCollisionObjects();
+                
+                const savedQuestState = localStorage.getItem('questState');
+                this.setQuestState(savedQuestState || 'START');
+
+                document.getElementById('restart-button').addEventListener('click', () => {
+                    localStorage.removeItem('questState');
+                    window.location.reload();
+                });
+
+                this.elements.volumeSlider.addEventListener('input', (e) => {
+                    const newVolume = e.target.value / 100;
+                    this.audioManager.setVolume(newVolume);
+
+                    if (this.questState === 'LOWER_MUSIC' && newVolume < 0.5) {
+                        this.setQuestState('TALK_AGAIN');
+                        this.audioManager.playLevelUpSound();
+                    }
+                });
+
+                requestAnimationFrame(this.gameLoop.bind(this));
+                
+                const startAudio = () => {
+                    this.audioManager.init();
+                    this.audioManager.setVolume(this.elements.volumeSlider.value / 100);
+                    document.body.removeEventListener('click', startAudio);
+                    document.body.removeEventListener('keydown', startAudio);
+                };
+                document.body.addEventListener('click', startAudio);
+                document.body.addEventListener('keydown', startAudio);
+            }
+
+            setQuestState(newState) {
+                this.questState = newState;
+                localStorage.setItem('questState', newState);
+                switch(newState) {
+                    case 'START': this.uiManager.updateQuest("Objetivo", "Fale com a garota."); break;
+                    case 'LOWER_MUSIC': this.uiManager.updateQuest("Objetivo", "Abaixe o volume da música."); break;
+                    case 'TALK_AGAIN': this.uiManager.updateQuest("Objetivo", "Fale com a garota novamente."); break;
+                    case 'COMPLETE': this.uiManager.updateQuest("Concluído", "Vocês se conheceram."); break;
+                }
+            }
+
+            setupEntities() {
+                this.player = new Player(this.elements.player, 450, 320);
+                this.npc = new NPC(this.elements.npc, 50, 50);
+                this.speaker = new Entity(this.elements.speaker, this.elements.speaker.offsetLeft, this.elements.speaker.offsetTop);
+            }
+
+            setupCollisionObjects() {
+                this.collisionObjects = [];
+                const objects = ['sofa', 'table', 'chair1', 'chair2', 'speaker', 'tv', 'bookshelf', 'bookshelf2', 'plant', 'plant2', 'plant3', 'counter', 'end_table'];
+                objects.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        this.collisionObjects.push({ x: el.offsetLeft, y: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight });
+                    }
+                });
+            }
+
+            gameLoop(timestamp) {
+                const deltaTime = (timestamp - this.lastTime) / 1000;
+                this.lastTime = timestamp;
+                if (this.gameState !== 'paused') this.update(deltaTime || 0);
+                this.draw();
+                requestAnimationFrame(this.gameLoop.bind(this));
+            }
+
+            update(deltaTime) {
+                if (this.gameState === 'exploring') {
+                    this.player.update(deltaTime, this.inputHandler, this.collisionObjects, {width: this.elements.camera.offsetWidth, height: this.elements.camera.offsetHeight});
+                    this.checkInteraction();
+                } else if (this.gameState === 'sitting') {
+                    this.uiManager.showInteractionPrompt(this.player.el, "Pressione para levantar");
+                    if (this.inputHandler.interact || Object.values(this.inputHandler.keys).some(k => k) || this.inputHandler.joystick.active) {
+                        this.standUp();
+                    }
+                }
+            }
+            
+            draw() {
+                this.player.draw();
+                this.npc.draw();
+            }
+
+            checkInteraction() {
+                const interactionRadius = 50;
+                const distToNpc = Math.hypot(this.player.x - this.npc.x, this.player.y - this.npc.y);
+
+                if (distToNpc < interactionRadius && (this.questState === 'START' || this.questState === 'TALK_AGAIN' || this.questState === 'COMPLETE')) {
+                    this.uiManager.showInteractionPrompt(this.npc.el);
+                    if (this.inputHandler.interact) {
+                        this.startDialogue();
+                        this.inputHandler.interact = false;
+                    }
+                } else {
+                    this.uiManager.hideInteractionPrompt(this.npc.el);
+                }
+            }
+
+            startDialogue() {
+                this.changeState('dialogue');
+                this.player.stopWalking();
+                
+                let startNodeKey = '';
+                if (this.questState === 'START') startNodeKey = 'start';
+                else if (this.questState === 'TALK_AGAIN') startNodeKey = 'talkAgainStart';
+                else if (this.questState === 'COMPLETE') startNodeKey = 'alreadyMet';
+
+                if (startNodeKey) this.dialogueSystem.start(startNodeKey);
+                else this.changeState('exploring');
+            }
+
+            standUp() {
+                this.changeState('exploring');
+                this.player.standUp();
+                this.uiManager.hideInteractionPrompt(this.player.el);
+            }
+            
+            changeState(newState) {
+                if (this.gameState === newState) return;
+                this.gameState = newState;
+            }
+        }
+
+        class Entity {
+            constructor(el, x, y) {
+                this.el = el; this.x = x; this.y = y;
+                this.width = el.offsetWidth; this.height = el.offsetHeight;
+            }
+            draw() { this.el.style.transform = `translate3d(${this.x}px, ${this.y}px, 0)`; }
+        }
+
+        class Player extends Entity {
+            constructor(el, x, y) {
+                super(el, x, y);
+                this.speed = 100; this.state = 'sitting';
+                this.spriteEl = this.el.querySelector('.character-sprite');
+                this.levelUpHeartEl = this.el.querySelector('#levelup-heart');
+                this.walkFrame = 0; this.walkTimer = 0;
+            }
+
+            update(deltaTime, input, collisionObjects, cameraBounds) {
+                if (this.state !== 'standing') return;
+                let dx = 0, dy = 0;
+                if (input.keys.ArrowUp || input.keys.w) dy -= 1;
+                if (input.keys.ArrowDown || input.keys.s) dy += 1;
+                if (input.keys.ArrowLeft || input.keys.a) dx -= 1;
+                if (input.keys.ArrowRight || input.keys.d) dx += 1;
+                if (input.joystick.active) { dx = input.joystick.x; dy = input.joystick.y; }
+                
+                if (dx !== 0 || dy !== 0) {
+                    const magnitude = Math.sqrt(dx * dx + dy * dy);
+                    const moveX = (dx / magnitude) * this.speed * deltaTime;
+                    const moveY = (dy / magnitude) * this.speed * deltaTime;
+
+                    // CORRIGIDO: Checa colisão nos eixos X e Y separadamente para "deslizar"
+                    let nextX = this.x + moveX;
+                    let playerBoxX = { x: nextX, y: this.y, width: this.width, height: this.height };
+                    if (!this.isColliding(playerBoxX, collisionObjects) && !this.isOutOfBounds(playerBoxX, cameraBounds)) {
+                        this.x = nextX;
+                    }
+
+                    let nextY = this.y + moveY;
+                    let playerBoxY = { x: this.x, y: nextY, width: this.width, height: this.height };
+                    if (!this.isColliding(playerBoxY, collisionObjects) && !this.isOutOfBounds(playerBoxY, cameraBounds)) {
+                        this.y = nextY;
+                    }
+
+                    this.animateWalk(deltaTime);
+                } else { this.stopWalking(); }
+            }
+
+            isColliding(playerBox, objects) {
+                for (const obj of objects) {
+                    if (playerBox.x < obj.x + obj.width && playerBox.x + playerBox.width > obj.x &&
+                        playerBox.y < obj.y + obj.height && playerBox.y + playerBox.height > obj.y) return true;
+                } return false;
+            }
+            isOutOfBounds(playerBox, bounds) {
+                return playerBox.x < 0 || playerBox.x + playerBox.width > bounds.width ||
+                       playerBox.y < 0 || playerBox.y + playerBox.height > bounds.height;
+            }
+            animateWalk(deltaTime) {
+                this.walkTimer += deltaTime;
+                if (this.walkTimer > 0.2) {
+                    this.walkTimer = 0; this.walkFrame = (this.walkFrame + 1) % 2;
+                    this.spriteEl.className = 'character-sprite ' + (this.walkFrame === 0 ? 'boy-idle' : 'boy-walk1');
+                }
+            }
+            standUp() { this.state = 'standing'; }
+            stopWalking() { this.spriteEl.className = 'character-sprite boy-idle'; }
+            triggerLevelUpAnimation() {
+                this.levelUpHeartEl.classList.add('animate');
+                setTimeout(() => this.levelUpHeartEl.classList.remove('animate'), 1200);
+            }
+        }
+        
+        class NPC extends Entity {}
+
+        class InputHandler {
+            constructor() {
+                this.keys = {}; this.interact = false;
+                this.joystick = { active: false, x: 0, y: 0, touchId: null, startX: 0, startY: 0 };
+            }
+            init(game) {
+                window.addEventListener('keydown', e => {
+                    this.keys[e.key] = true;
+                    if (['e', 'Enter', ' '].includes(e.key)) this.interact = true;
+                });
+                window.addEventListener('keyup', e => {
+                    this.keys[e.key] = false;
+                    if (['e', 'Enter', ' '].includes(e.key)) this.interact = false;
+                });
+                const joystickArea = document.getElementById('joystick-area');
+                const joystickThumb = document.getElementById('joystick-thumb');
+                const actionButton = document.getElementById('action-button');
+                joystickArea.addEventListener('touchstart', e => {
+                    e.preventDefault();
+                    if (this.joystick.touchId === null) {
+                        const touch = e.changedTouches[0]; this.joystick.touchId = touch.identifier;
+                        this.joystick.active = true; const rect = joystickArea.getBoundingClientRect();
+                        this.joystick.startX = rect.left + rect.width / 2; this.joystick.startY = rect.top + rect.height / 2;
+                    }
+                }, { passive: false });
+                const handleMove = (e) => {
+                    if (this.joystick.active) {
+                        for (let i=0; i < e.changedTouches.length; i++) {
+                            const touch = e.changedTouches[i];
+                            if (touch.identifier === this.joystick.touchId) {
+                                const dx = touch.clientX - this.joystick.startX; const dy = touch.clientY - this.joystick.startY;
+                                const dist = Math.min(60, Math.hypot(dx, dy)); const angle = Math.atan2(dy, dx);
+                                this.joystick.x = Math.cos(angle); this.joystick.y = Math.sin(angle);
+                                joystickThumb.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
+                                break;
+                            }
+                        }
+                    }
+                };
+                window.addEventListener('touchmove', handleMove, { passive: false });
+                const endTouch = (e) => {
+                    for (let i=0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === this.joystick.touchId) {
+                            this.joystick.active = false; this.joystick.x = 0; this.joystick.y = 0;
+                            this.joystick.touchId = null; joystickThumb.style.transform = `translate(0,0)`;
+                            break;
+                        }
+                    }
+                };
+                window.addEventListener('touchend', endTouch); window.addEventListener('touchcancel', endTouch);
+                actionButton.addEventListener('touchstart', e => { e.preventDefault(); this.interact = true; });
+                actionButton.addEventListener('touchend', e => { e.preventDefault(); this.interact = false; });
+            }
+        }
+        
+        class DialogueSystem {
+            constructor(game, dialogueData) {
+                this.game = game; this.data = dialogueData; this.currentNodeKey = null;
+                this.elements = { box: document.getElementById('dialogue-box'), portrait: document.getElementById('dialogue-portrait'), speaker: document.getElementById('dialogue-speaker'), text: document.getElementById('dialogue-text'), choices: document.getElementById('dialogue-choices'), };
+                this.callbacks = { 
+                    setQuest_LowerMusic: () => this.game.setQuestState('LOWER_MUSIC'),
+                    completeFinalQuest: () => { 
+                        this.game.setQuestState('COMPLETE');
+                        this.game.player.triggerLevelUpAnimation();
+                        this.game.audioManager.playLevelUpSound();
+                    } 
+                };
+            }
+            start(nodeKey) { this.currentNodeKey = nodeKey; this.elements.box.classList.add('visible'); this.game.audioManager.playMumble(); this.renderNode(); }
+            renderNode() {
+                const node = this.data[this.currentNodeKey];
+                if (!node) { this.end(); return; }
+                if (node.onEnter && this.callbacks[node.onEnter]) this.callbacks[node.onEnter]();
+                this.elements.speaker.textContent = node.speaker; this.elements.text.innerHTML = node.text; this.elements.portrait.className = `dialogue-portrait ${node.portrait}`; this.elements.choices.innerHTML = '';
+                if (node.choices) {
+                    node.choices.forEach(choice => { const button = document.createElement('button'); button.className = 'choice-button'; button.textContent = choice.label; button.onclick = () => this.selectChoice(choice.next); this.elements.choices.appendChild(button); });
+                } else {
+                    const advance = (e) => { 
+                        if (e.type === 'click' || ['e', 'Enter', ' '].includes(e.key)) { 
+                            this.currentNodeKey = node.next; this.game.audioManager.playMumble(); this.renderNode(); 
+                            this.elements.box.removeEventListener('click', advance); window.removeEventListener('keydown', advance); 
+                        } 
+                    };
+                    this.elements.box.addEventListener('click', advance); window.addEventListener('keydown', advance);
+                }
+            }
+            selectChoice(nextNodeKey) { this.currentNodeKey = nextNodeKey; this.game.audioManager.playMumble(); this.renderNode(); }
+            end() { this.elements.box.classList.remove('visible'); this.game.changeState('exploring'); }
+        }
+
+        class UIManager {
+            constructor(game) { this.game = game; }
+            init() {}
+            updateQuest(title, description) { document.getElementById('quest-title').textContent = title; document.getElementById('quest-description').textContent = description; }
+            showInteractionPrompt(targetEl, customText = null) { const prompt = targetEl.querySelector('.interaction-prompt'); if (prompt) { if (customText) prompt.textContent = customText; prompt.classList.add('visible'); } }
+            hideInteractionPrompt(targetEl) { const prompt = targetEl.querySelector('.interaction-prompt'); if (prompt) prompt.classList.remove('visible'); }
+        }
+
+        class AudioManager {
+            constructor() {
+                this.audioCtx = null; this.isMuted = false; this.masterGain = null;
+                this.musicScheduler = null;
+            }
+            init() { 
+                if (this.audioCtx) return; 
+                try { 
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+                    this.masterGain = this.audioCtx.createGain();
+                    this.masterGain.connect(this.audioCtx.destination); 
+                    this.playMusic(); 
+                    this.playSpeakerThump(); 
+                } catch (e) { console.error("Web Audio API não suportada."); } 
+            }
+            setVolume(level) {
+                if (!this.masterGain) return;
+                this.masterGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, level), this.audioCtx.currentTime + 0.05);
+            }
+            playMusic() {
+                if (!this.audioCtx) return;
+                const notes = [261.63, 329.63, 392.00, 440.00];
+                let noteIndex = 0;
+                const playNote = () => {
+                    if (this.isMuted) return;
+                    const time = this.audioCtx.currentTime;
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = notes[noteIndex % notes.length] / 2;
+                    gain.gain.setValueAtTime(0.05, time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.8);
+                    osc.connect(gain).connect(this.masterGain);
+                    osc.start(time); osc.stop(time + 0.8);
+                    noteIndex++;
+                };
+                this.musicScheduler = setInterval(playNote, 600);
+            }
+            playSpeakerThump() { if (!this.audioCtx) return; setInterval(() => { if (this.isMuted) return; const thump = this.audioCtx.createOscillator(); const thumpGain = this.audioCtx.createGain(); thump.type = 'sine'; thump.frequency.setValueAtTime(80, this.audioCtx.currentTime); thump.frequency.exponentialRampToValueAtTime(40, this.audioCtx.currentTime + 0.1); thumpGain.gain.setValueAtTime(0.3, this.audioCtx.currentTime); thumpGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.2); thump.connect(thumpGain).connect(this.masterGain); thump.start(); thump.stop(this.audioCtx.currentTime + 0.2); }, 1200); }
+            playMumble() { if (!this.audioCtx || this.isMuted) return; const duration = 0.05; const basePitch = 200 + Math.random() * 200; for (let i = 0; i < 3; i++) { const time = this.audioCtx.currentTime + i * (duration + 0.02); const osc = this.audioCtx.createOscillator(); const gain = this.audioCtx.createGain(); osc.type = 'square'; osc.frequency.value = basePitch + (Math.random() - 0.5) * 50; gain.gain.setValueAtTime(0.1, time); gain.gain.exponentialRampToValueAtTime(0.001, time + duration); osc.connect(gain).connect(this.masterGain); osc.start(time); osc.stop(time + duration); } }
+            playLevelUpSound() {
+                if (!this.audioCtx || this.isMuted) return;
+                const notes = [392.00, 523.25, 659.25, 783.99];
+                const duration = 0.1;
+                notes.forEach((freq, i) => {
+                    const time = this.audioCtx.currentTime + i * duration;
+                    const osc = this.audioCtx.createOscillator(); const gain = this.audioCtx.createGain();
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, time);
+                    gain.gain.setValueAtTime(0.15, time); gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 1.5);
+                    osc.connect(gain).connect(this.masterGain); osc.start(time); osc.stop(time + duration * 1.5);
+                });
+            }
+        }
+
+    })();
+    </script>
+
+</body>
+</html>
