@@ -910,8 +910,8 @@
             });
 
           this.elements.volumeSlider.addEventListener("input", (e) => {
-            const newVolume = e.target.value / 100;
-            this.audioManager.setVolume(newVolume);
+            const newVolume = e.target.value / 100; // 0..1
+            this.audioManager.setVolume(newVolume); // mapeado para 0..2 internamente
 
             if (this.questState === "LOWER_MUSIC" && newVolume < 0.5) {
               this.setQuestState("TALK_AGAIN");
@@ -930,10 +930,7 @@
           /* ==== DESBLOQUEIO DE ÁUDIO NO MOBILE ==== */
           const startAudio = async () => {
             this.audioManager.init(); // cria AudioContext
-            // iOS e alguns Androids exigem resume em gesto do usuário
-            try {
-              await this.audioManager.resume();
-            } catch (e) {}
+            try { await this.audioManager.resume(); } catch (e) {}
             this.audioManager.setVolume(this.elements.volumeSlider.value / 100);
             removeAudioUnlockers();
           };
@@ -941,25 +938,19 @@
           const removeAudioUnlockers = () => {
             document.body.removeEventListener("click", startAudio);
             document.body.removeEventListener("keydown", startAudio);
-            document.body.removeEventListener("touchstart", startAudio, {
-              passive: true,
-            });
+            document.body.removeEventListener("touchstart", startAudio, { passive: true });
             document.body.removeEventListener("pointerdown", startAudio);
           };
 
           document.body.addEventListener("click", startAudio);
           document.body.addEventListener("keydown", startAudio);
-          document.body.addEventListener("touchstart", startAudio, {
-            passive: true,
-          });
+          document.body.addEventListener("touchstart", startAudio, { passive: true });
           document.body.addEventListener("pointerdown", startAudio);
 
           /* Retomar áudio quando voltar do background (iOS) */
           document.addEventListener("visibilitychange", async () => {
             if (document.visibilityState === "visible") {
-              try {
-                await this.audioManager.resume();
-              } catch (e) {}
+              try { await this.audioManager.resume(); } catch (e) {}
             }
           });
         }
@@ -992,7 +983,17 @@
         }
 
         setupEntities() {
-          this.player = new Player(this.elements.player, 450, 320);
+          // Centraliza o player no mobile para não iniciar fora da tela
+          const isMobile = window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+          let startX = 450, startY = 320; // padrão desktop (como estava)
+          if (isMobile) {
+            const pw = this.elements.player.offsetWidth || 24; // fallback
+            const ph = this.elements.player.offsetHeight || 40; // fallback
+            startX = (this.baseWidth - pw) / 2;
+            startY = (this.baseHeight - ph) / 2;
+          }
+
+          this.player = new Player(this.elements.player, startX, startY);
           this.npc = new NPC(this.elements.npc, 50, 50);
           this.speaker = new Entity(
             this.elements.speaker,
@@ -1282,9 +1283,7 @@
                   const angle = Math.atan2(dy, dx);
                   this.joystick.x = Math.cos(angle);
                   this.joystick.y = Math.sin(angle);
-                  joystickThumb.style.transform = `translate(${
-                    Math.cos(angle) * dist
-                  }px, ${Math.sin(angle) * dist}px)`;
+                  joystickThumb.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
                   break;
                 }
               }
@@ -1433,7 +1432,7 @@
           try {
             this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             this.masterGain = this.audioCtx.createGain();
-            this.masterGain.gain.value = 0.5;
+            this.masterGain.gain.value = 1.0; // volume base maior
             this.masterGain.connect(this.audioCtx.destination);
 
             /* "Desbloqueio" imediato: toca um buffer curtíssimo em silêncio */
@@ -1458,12 +1457,13 @@
           }
         }
 
+        // Agora o slider 0..1 é mapeado para 0..2 (até 2x o volume anterior)
         setVolume(level) {
           if (!this.masterGain || !this.audioCtx) return;
-          const v = Math.max(0.0001, level);
+          const target = Math.max(0.0001, Math.min(level * 2, 2)); // 0..2
           this.masterGain.gain.cancelScheduledValues(this.audioCtx.currentTime);
           this.masterGain.gain.exponentialRampToValueAtTime(
-            v,
+            target,
             this.audioCtx.currentTime + 0.05
           );
         }
